@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Peep-DB</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', path='style.css') }}"
+        />
+    </head>
+    <body class="min-h-screen bg-gray-100 flex flex-col">
+        <!--Navbar -->
+        {% include "components/navbar.html" %}
+
+        <main class="flex-1 w-full">
+            {% block content %}{% endblock content %}
+        </main>
+
+        <footer class="bg-gray-950 text-white text-xs text-center py-3">
+            <p id="copyright"></p>
+        </footer>
+
+        <script defer src="{{ url_for('static', path='script.js') }}"></script>
+        <script>
+            const copyright = document.getElementById("copyright");
+            copyright.textContent = `© ${new Date().getFullYear()} Amit Bhagat. All rights reserved.`;
+        </script>
+    </body>
+</html>
