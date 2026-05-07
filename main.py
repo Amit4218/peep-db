@@ -1,15 +1,18 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Depends
+from sqlmodel import Session
+
+# Local imports
+from core.connection import DbQuerys
+from config.database import Databases, SQLModel, engine, get_db
+from core.get_databases import get_databases
+from schemas.res_schema import GetSavedDbRes, QuickConnectRes
+from schemas.databases import DatabasesSchema, QuickConnect
+
 
 app = FastAPI()
 
-# Register templates
-templates = Jinja2Templates(directory="templates")
-
-# Register static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Create tables if they don't exist
+SQLModel.metadata.create_all(engine, checkfirst=True)  
 
 
 @app.get("/root")
@@ -17,6 +20,35 @@ def root() -> dict[str, str]:
     return {"status": "App running"}
 
 
-@app.get("/", response_class=HTMLResponse)
-def home(req: Request):
-    return templates.TemplateResponse(request=req, name="pages/home.html")
+@app.get("/get-saved-dbs", response_model=GetSavedDbRes)
+async def home(db: Session = Depends(get_db)):
+    get_databases_list = await get_databases(db=db)
+    return GetSavedDbRes(data=get_databases_list)
+
+
+@app.post("/quick/connect", response_model=QuickConnectRes)
+async def connect(url: QuickConnect, db: Session = Depends(get_db)):
+    db = DbQuerys(db_url=url.connection_url)
+    tables = await db.get_tables()
+    row_data = await  db.get_table_records(tables=tables)
+    return QuickConnectRes(data=row_data)
+
+
+
+@app.post("/new/connect", response_model=QuickConnectRes)
+async def new_connect(data:DatabasesSchema, db: Session = Depends(get_db)):
+    
+    # save the new database connection to the database
+    new_db = Databases(**data.model_dump())
+    
+    new_db.build_conn_url()
+    db.add(new_db)
+    db.commit()
+    db.refresh(new_db)
+    
+    # fetch the records
+    db = DbQuerys(db_url=new_db.connection_url)
+    tables = await db.get_tables()
+    row_data = await db.get_table_records(tables=tables)
+    return QuickConnectRes(data=row_data)
+
