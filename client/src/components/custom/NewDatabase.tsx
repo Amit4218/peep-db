@@ -16,15 +16,12 @@ type ConnectionType = "FULL" | "QUICK";
 
 function NewDatabase() {
   const [connectionType, setConnectionType] = useState<ConnectionType>("FULL");
-
   const [name, setName] = useState("");
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [host, setHost] = useState("localhost");
   const [port, setPort] = useState("5432");
-
   const [databaseUrl, setDatabaseUrl] = useState("");
-
   const [error, setError] = useState("");
 
   const handelFullConnect = async (e: React.SubmitEvent<HTMLFormElement>) => {
@@ -50,7 +47,7 @@ function NewDatabase() {
   };
 
   return (
-    <Card className="w-full max-w-3xl border-border/60 shadow-sm">
+    <Card className="relative ml-40 w-full max-w-3xl border-border/60 shadow-sm">
       {/* Header */}
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
@@ -101,7 +98,7 @@ function NewDatabase() {
       {/* FULL */}
       {connectionType === "FULL" && (
         <form onSubmit={handelFullConnect}>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pb-5">
             {/* Connection */}
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
