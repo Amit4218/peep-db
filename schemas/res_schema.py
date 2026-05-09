@@ -1,6 +1,5 @@
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
-from schemas.databases import DatabasesSchema
 
 class DbConnectionRes(BaseModel):
     status:int = 200
@@ -11,12 +10,12 @@ class DbConnectionRes(BaseModel):
     
 class SavedDatabases(BaseModel):
     name:str
-    url:str
+    connection_url:str
     
 class GetSavedDbRes(BaseModel):
     status:int = 200
     message:str = "Saved Databases Fetched Successfully"
-    data: List[DatabasesSchema]
+    data: List[SavedDatabases]
 
 
 class RecordsBaseModel(BaseModel):
@@ -27,3 +26,4 @@ class QuickConnectRes(BaseModel):
     status:int = 200
     message:str = "Records Fetched Successfully"
     data: Dict[str, RecordsBaseModel]
+    tables: List[str] = []

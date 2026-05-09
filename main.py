@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends
 from sqlmodel import Session
+from fastapi.middleware.cors import CORSMiddleware
 
 # Local imports
 from core.connection import DbQuerys
@@ -10,6 +11,16 @@ from schemas.databases import DatabasesSchema, QuickConnect
 
 
 app = FastAPI()
+origins = ["http://localhost:5173"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 # Create tables if they don't exist
 SQLModel.metadata.create_all(engine, checkfirst=True)  
@@ -31,7 +42,7 @@ async def connect(url: QuickConnect, db: Session = Depends(get_db)):
     db = DbQuerys(db_url=url.connection_url)
     tables = await db.get_tables()
     row_data = await  db.get_table_records(tables=tables)
-    return QuickConnectRes(data=row_data)
+    return QuickConnectRes(data=row_data, tables=tables)
 
 
 
@@ -39,16 +50,15 @@ async def connect(url: QuickConnect, db: Session = Depends(get_db)):
 async def new_connect(data:DatabasesSchema, db: Session = Depends(get_db)):
     
     # save the new database connection to the database
-    new_db = Databases(**data.model_dump())
+    new_db = Databases(**data.model_dump()).build_conn_url()
     
-    new_db.build_conn_url()
     db.add(new_db)
     db.commit()
     db.refresh(new_db)
     
     # fetch the records
-    db = DbQuerys(db_url=new_db.connection_url)
-    tables = await db.get_tables()
-    row_data = await db.get_table_records(tables=tables)
-    return QuickConnectRes(data=row_data)
+    q_db = DbQuerys(db_url=new_db.connection_url)
+    tables = await q_db.get_tables()
+    row_data = await q_db.get_table_records(tables=tables)
+    return QuickConnectRes(data=row_data, tables=tables)
 

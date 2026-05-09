@@ -14,9 +14,9 @@ class Databases(SQLModel, table=True):
     port:int
     host:str
     
-    def build_conn_url(self) -> None:
-        self.connection_url = f"postgresql://{self.user}:{self.password}@{self.host}/{self.name}"
-
+    def build_conn_url(self):
+        self.connection_url = f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.name}"
+        return self
 
 async def get_db():
     """yeilds an instance of the db and closes it afterwards."""
