@@ -7,10 +7,20 @@ import Loading from "./components/custom/Loading";
 
 import getDatabases from "./api/getDatabases";
 import getDatabasesTables from "./api/getDatabaseTables";
+import Table from "./components/custom/Table";
 
 interface Databases {
   name: string;
   connection_url: string;
+}
+
+export interface TableStructure {
+  columns: string[];
+  data: unknown[][];
+}
+
+export interface TableData {
+  [tableName: string]: TableStructure;
 }
 
 export default function App() {
@@ -21,6 +31,12 @@ export default function App() {
 
   const [databaseTables, setDatabaseTables] = useState<string[]>([]);
   const [addNewDatabase, setAddNewDatabase] = useState(false);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [tableData, setTablesData] = useState<TableData | null>(null);
+
+  // showing the table
+  const [tableColumns, setTableColumns] = useState([]);
+  const [tableRows, setTableRows] = useState([]);
 
   const [databases, setDatabases] = useState<Databases[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,18 +49,35 @@ export default function App() {
       const data = await getDatabasesTables(url);
 
       setDatabaseTables(data?.tables || []);
+      setSelectedTable(data?.tables[0]);
+      setTablesData(data?.data);
       setSelectedDatabase(name);
 
       // switch sidebar to tables view
       setShow("tables");
 
-      console.log(data);
+      console.log(data?.data);
     } catch (error) {
       console.error(error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!tableData) return;
+
+    const getColumnsAndRows = () => {
+      for (const t in tableData) {
+        if (t == selectedTable) {
+          setTableColumns(tableData[t].columns);
+          setTableRows(tableData[t].data);
+        }
+      }
+    };
+
+    getColumnsAndRows();
+  }, [tableData, selectedTable]);
 
   // fetch saved databases
   useEffect(() => {
@@ -152,7 +185,12 @@ export default function App() {
                     key={idx}
                     variant="default"
                     size="sm"
-                    className="justify-start rounded-sm font-semibold bg-primary/50 hover:bg-primary/70"
+                    className={`justify-start rounded-sm font-semibold ${
+                      table == selectedTable
+                        ? "bg-primary/90"
+                        : "hover:bg-primary/90 bg-primary/40"
+                    }`}
+                    onClick={() => setSelectedTable(table)}
                   >
                     {table}
                   </Button>
@@ -181,22 +219,33 @@ export default function App() {
         </div>
       )}
 
-      {/* Main Content */}
-      <div className="flex-1">
-        {isLoading ? (
+      {/* Loader */}
+      {isLoading && (
+        <div className="flex-1">
           <div className="min-h-screen flex justify-center items-center">
             <Loading />
           </div>
-        ) : (
-          <div className="min-h-screen flex justify-center items-center">
-            <h3 className="text-md font-semibold">
-              {selectedDatabase
-                ? `Selected Database: ${selectedDatabase}`
-                : "Please Select a Database!"}
-            </h3>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      {!isLoading && (
+        <>
+          {!selectedDatabase && (
+            <div className="flex-1 flex justify-center items-center text-center">
+              <h3 className="text-md font-semibold ">
+                {!selectedDatabase && "Please Select a Database!"}
+              </h3>
+            </div>
+          )}
+
+          {selectedDatabase && (
+            <div className="w-full">
+              <Table columns={tableColumns} rows={tableRows} />
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
